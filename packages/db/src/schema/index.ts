@@ -56,3 +56,13 @@ export { pluginEntities } from "./plugin_entities.js";
 export { pluginJobs, pluginJobRuns } from "./plugin_jobs.js";
 export { pluginWebhookDeliveries } from "./plugin_webhooks.js";
 export { pluginLogs } from "./plugin_logs.js";
+
+// TowerHQ v1 extensions
+export { projectTeamMembers } from "./project_team_members.js";
+export { skillVersions } from "./skill_versions.js";
+export { agentSkillBindings } from "./agent_skill_bindings.js";
+export { tools } from "./tools.js";
+export { toolVersions } from "./tool_versions.js";
+export { agentToolBindings } from "./agent_tool_bindings.js";
+export { projectSkillRequirements } from "./project_skill_requirements.js";
+export { projectToolAvailability } from "./project_tool_availability.js";
