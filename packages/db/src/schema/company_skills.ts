@@ -26,11 +26,15 @@ export const companySkills = pgTable(
     compatibility: text("compatibility").notNull().default("compatible"),
     fileInventory: jsonb("file_inventory").$type<Array<Record<string, unknown>>>().notNull().default([]),
     metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+    // TowerHQ v1 extensions
+    status: text("status").notNull().default("draft"), // draft, active, deprecated, archived
+    currentVersionId: uuid("current_version_id"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => ({
     companyKeyUniqueIdx: uniqueIndex("company_skills_company_key_idx").on(table.companyId, table.key),
     companyNameIdx: index("company_skills_company_name_idx").on(table.companyId, table.name),
+    companyStatusIdx: index("company_skills_company_status_idx").on(table.companyId, table.status),
   }),
 );
