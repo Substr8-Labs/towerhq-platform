@@ -82,10 +82,51 @@ async function createRunProof(
   }
 }
 
+// Base adapter package map
+const ADAPTER_PACKAGES: Record<string, string> = {
+  openclaw_gateway: "@paperclipai/adapter-openclaw-gateway/server",
+  claude_local: "@paperclipai/adapter-claude-local/server",
+  codex_local: "@paperclipai/adapter-codex-local/server",
+  cursor: "@paperclipai/adapter-cursor-local/server",
+  gemini_local: "@paperclipai/adapter-gemini-local/server",
+  opencode_local: "@paperclipai/adapter-opencode-local/server",
+  pi_local: "@paperclipai/adapter-pi-local/server",
+  hermes_local: "hermes-paperclip-adapter/server",
+};
+
+type AdapterModule = {
+  execute?: (ctx: AdapterExecutionContext) => Promise<AdapterExecutionResult>;
+};
+
+// Dynamic base adapter loader
+async function getBaseAdapterExecute(
+  adapterType: string
+): Promise<((ctx: AdapterExecutionContext) => Promise<AdapterExecutionResult>) | null> {
+  const packageName = ADAPTER_PACKAGES[adapterType];
+  if (!packageName) return null;
+  
+  try {
+    const mod = await import(packageName) as AdapterModule;
+    return mod.execute ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function execute(
   ctx: AdapterExecutionContext
 ): Promise<AdapterExecutionResult> {
   const config = ctx.config as Substr8Config;
+  
+  // Validate base adapter config
+  if (!config.baseAdapter) {
+    return {
+      exitCode: 1,
+      signal: null,
+      timedOut: false,
+      summary: "[substr8] Error: baseAdapter is required in config",
+    };
+  }
   
   // Extract Substr8 config
   const gamUrl = config.gamUrl || process.env.GAM_URL || "http://localhost:8091";
@@ -107,20 +148,38 @@ export async function execute(
   
   // Log pre-execution
   await ctx.onLog("stdout", `[substr8] Pre-execution: mode=${governanceMode}, input_hash=${inputHash}\n`);
+  await ctx.onLog("stdout", `[substr8] Base adapter: ${config.baseAdapter}\n`);
 
-  // TODO: Execute the base adapter
-  // For now, return a placeholder result
-  // In full implementation, we would:
-  // 1. Dynamically import the base adapter
-  // 2. Call its execute() with modified context
-  // 3. Capture the result
-  
-  const baseResult: AdapterExecutionResult = {
-    exitCode: 0,
-    signal: null,
-    timedOut: false,
-    summary: "[substr8] Base adapter execution placeholder - wire up base adapter",
+  // Get the base adapter execute function
+  const baseExecute = await getBaseAdapterExecute(config.baseAdapter);
+  if (!baseExecute) {
+    return {
+      exitCode: 1,
+      signal: null,
+      timedOut: false,
+      summary: `[substr8] Error: Unsupported base adapter '${config.baseAdapter}'. Supported: ${Object.keys(ADAPTER_PACKAGES).join(", ")}`,
+    };
+  }
+
+  // Create modified context for base adapter
+  const baseContext: AdapterExecutionContext = {
+    ...ctx,
+    config: config.baseAdapterConfig || {},
   };
+
+  // Execute the base adapter
+  await ctx.onLog("stdout", `[substr8] Executing base adapter...\n`);
+  let baseResult: AdapterExecutionResult;
+  try {
+    baseResult = await baseExecute(baseContext);
+  } catch (error) {
+    baseResult = {
+      exitCode: 1,
+      signal: null,
+      timedOut: false,
+      summary: `[substr8] Base adapter threw: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
 
   // Post-execution: capture output hash
   const outputHash = hashContent(JSON.stringify({
@@ -144,6 +203,7 @@ export async function execute(
   if (captureMemory) {
     const memoryContent = `Run ${ctx.runId} completed.
 Agent: ${ctx.agent.name}
+Base adapter: ${config.baseAdapter}
 Input hash: ${inputHash}
 Output hash: ${outputHash}
 Exit code: ${baseResult.exitCode}
@@ -152,6 +212,7 @@ Summary: ${baseResult.summary || "No summary"}`;
     const gamResult = await writeToGam(gamUrl, agentId, tenantId, memoryContent, {
       runId: ctx.runId,
       agentId: ctx.agent.id,
+      baseAdapter: config.baseAdapter,
       inputHash,
       outputHash,
       governanceMode,
@@ -167,7 +228,7 @@ Summary: ${baseResult.summary || "No summary"}`;
 
   substr8Meta.memory_summary = {
     written: memoriesWritten,
-    recalled: 0, // TODO: implement recall tracking
+    recalled: 0,
   };
 
   // Create proof if enabled
@@ -176,6 +237,7 @@ Summary: ${baseResult.summary || "No summary"}`;
       runId: ctx.runId,
       agentId: ctx.agent.id,
       agentName: ctx.agent.name,
+      baseAdapter: config.baseAdapter,
       inputHash,
       outputHash,
       governanceMode,
