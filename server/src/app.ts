@@ -30,6 +30,8 @@ import { assetRoutes } from "./routes/assets.js";
 import { accessRoutes } from "./routes/access.js";
 import { pluginRoutes } from "./routes/plugins.js";
 import { pluginUiStaticRoutes } from "./routes/plugin-ui-static.js";
+import { projectTeamRoutes } from './routes/project-team.js';
+import { agentBindingRoutes } from './routes/agent-bindings.js';
 import { applyUiBranding } from "./ui-branding.js";
 import { logger } from "./middleware/logger.js";
 import { DEFAULT_LOCAL_PLUGIN_DIR, pluginLoader } from "./services/plugin-loader.js";
@@ -144,6 +146,8 @@ export async function createApp(
   api.use(agentRoutes(db));
   api.use(assetRoutes(db, opts.storageService));
   api.use(projectRoutes(db));
+  api.use(projectTeamRoutes(db));
+  api.use(agentBindingRoutes(db));
   api.use(issueRoutes(db, opts.storageService));
   api.use(routineRoutes(db));
   api.use(executionWorkspaceRoutes(db));
