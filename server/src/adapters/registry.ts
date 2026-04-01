@@ -1,5 +1,14 @@
 import type { ServerAdapterModule } from "./types.js";
 import { getAdapterSessionManagement } from "@paperclipai/adapter-utils";
+// Substr8 governed adapter
+import {
+  execute as substr8Execute,
+  testEnvironment as substr8TestEnvironment,
+} from "@towerhq/adapter-substr8/server";
+import {
+  agentConfigurationDoc as substr8AgentConfigurationDoc,
+  models as substr8Models,
+} from "@towerhq/adapter-substr8";
 import {
   execute as claudeExecute,
   listClaudeSkills,
@@ -188,6 +197,15 @@ const hermesLocalAdapter: ServerAdapterModule = {
   detectModel: () => detectModelFromHermes(),
 };
 
+
+const substr8Adapter: ServerAdapterModule = {
+  type: "substr8",
+  execute: substr8Execute,
+  testEnvironment: substr8TestEnvironment,
+  models: substr8Models,
+  supportsLocalAgentJwt: false,
+  agentConfigurationDoc: substr8AgentConfigurationDoc,
+};
 const adaptersByType = new Map<string, ServerAdapterModule>(
   [
     claudeLocalAdapter,
@@ -200,6 +218,7 @@ const adaptersByType = new Map<string, ServerAdapterModule>(
     hermesLocalAdapter,
     processAdapter,
     httpAdapter,
+    substr8Adapter,
   ].map((a) => [a.type, a]),
 );
 

@@ -220,6 +220,22 @@ importers:
         specifier: ^5.7.3
         version: 5.9.3
 
+  packages/adapters/substr8:
+    dependencies:
+      '@paperclipai/adapter-utils':
+        specifier: workspace:*
+        version: link:../../adapter-utils
+      '@paperclipai/shared':
+        specifier: workspace:*
+        version: link:../../shared
+    devDependencies:
+      '@types/node':
+        specifier: ^24.6.0
+        version: 24.12.0
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+
   packages/db:
     dependencies:
       '@paperclipai/shared':
@@ -473,6 +489,9 @@ importers:
       '@paperclipai/shared':
         specifier: workspace:*
         version: link:../packages/shared
+      '@towerhq/adapter-substr8':
+        specifier: workspace:*
+        version: link:../packages/adapters/substr8
       ajv:
         specifier: ^8.18.0
         version: 8.18.0
