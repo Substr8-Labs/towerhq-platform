@@ -90,6 +90,7 @@ import {
 } from "hermes-paperclip-adapter";
 import { processAdapter } from "./process/index.js";
 import { httpAdapter } from "./http/index.js";
+import { kimiOrchestratorAdapter } from "./kimi-orchestrator/index.js";
 
 const claudeLocalAdapter: ServerAdapterModule = {
   type: "claude_local",
@@ -218,6 +219,7 @@ const adaptersByType = new Map<string, ServerAdapterModule>(
     hermesLocalAdapter,
     processAdapter,
     httpAdapter,
+    kimiOrchestratorAdapter,
     substr8Adapter,
   ].map((a) => [a.type, a]),
 );
